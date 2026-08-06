@@ -10,6 +10,7 @@ class Destination(Base):
     name: Mapped[str] = mapped_column(String(200), nullable=False, index=True)
     country: Mapped[str] = mapped_column(String(100), nullable=False, index=True)
     description: Mapped[str] = mapped_column(String(2000), nullable=True)
+    tags: Mapped[str] = mapped_column(String(500), nullable=True) # e.g., "beach,adventure"
     image_url: Mapped[str] = mapped_column(String(500), nullable=True)
     avg_budget: Mapped[float] = mapped_column(Float, nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())

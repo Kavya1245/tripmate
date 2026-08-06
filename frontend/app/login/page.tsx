@@ -5,76 +5,218 @@ import api from "@/lib/api";
 
 export default function LoginPage() {
   const [isLogin, setIsLogin] = useState(true);
+  const [showForgotPassword, setShowForgotPassword] = useState(false);
+  
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [phone, setPhone] = useState("");
+  const [dob, setDob] = useState("");
+  
+  const [showPassword, setShowPassword] = useState(false);
+  const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
   const router = useRouter();
+
+  // Validation Functions
+  const validatePassword = (pwd: string) => {
+    // Min 6 chars, 1 upper, 1 lower, 1 number, 1 special char, no spaces
+    const regex = /^(?=.*[A-Z])(?=.*[a-z])(?=.*\d)(?=.*[^A-Za-z0-9])(?!.*\s).{6,}$/;
+    return regex.test(pwd);
+  };
+
+  const validatePhone = (ph: string) => {
+    // Exactly 10 digits
+    const regex = /^\d{10}$/;
+    return regex.test(ph);
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setLoading(true);
+    setError("");
+    
     try {
       if (isLogin) {
-        const res = await api.post("/auth/login", { email, password });
+        const formData = new URLSearchParams();
+        formData.append("username", email);
+        formData.append("password", password);
+        
+        const res = await api.post("/auth/login", formData);
         localStorage.setItem("token", res.data.access_token);
         router.push("/trips");
       } else {
-        await api.post("/auth/signup", { name, email, password });
-        alert("Signup successful! Please login.");
+        // Sign up validations
+        if (!validatePassword(password)) {
+          setError("Password must be min 6 chars, with 1 uppercase, 1 lowercase, 1 number, 1 special char, and no spaces.");
+          setLoading(false);
+          return;
+        }
+        if (phone && !validatePhone(phone)) {
+          setError("Phone number must be exactly 10 digits.");
+          setLoading(false);
+          return;
+        }
+
+        await api.post("/auth/signup", { 
+          name, 
+          email, 
+          password,
+          phone_number: phone || null,
+          dob: dob || null
+        });
         setIsLogin(true);
+        setError("Signup successful! Please log in.");
       }
     } catch (err: any) {
-      // This will show us the EXACT error from the backend
       const msg = err?.response?.data?.detail || err.message;
-      alert("Error: " + JSON.stringify(msg));
+      setError(typeof msg === 'string' ? msg : "Something went wrong");
+    } finally {
+      setLoading(false);
     }
   };
 
+  const handleSendCode = (e: React.FormEvent) => {
+    e.preventDefault();
+    alert(`A reset code has been sent to ${email} (Demo only).`);
+    setShowForgotPassword(false);
+    setIsLogin(true);
+  };
+
+  // --- FORGOT PASSWORD UI ---
+  if (showForgotPassword) {
+    return (
+      <div className="relative min-h-screen w-full overflow-hidden">
+        <div className="absolute inset-0 bg-cover bg-center" style={{ backgroundImage: "url('https://z-cdn-media.chatglm.cn/files/f66aa54a-f370-4739-8e85-576bf31b09c8.jpeg?auth_key=1885990140-11b6f8078b724142b6cc5cdfb0f19528-0-d1d2ef78938e16a5e0a6d72ba81984c4')" }}></div>
+        <div className="absolute inset-0 bg-gradient-to-b from-black/70 via-black/40 to-black/80"></div>
+        <div className="relative z-10 flex min-h-screen flex-col items-center justify-between py-12 px-4 text-white">
+          <h1 className="text-4xl font-bold tracking-wider drop-shadow-lg md:text-5xl">✈️ TripMate AI</h1>
+          
+          <div className="w-full max-w-md rounded-2xl border border-white/30 bg-white/10 p-8 shadow-2xl backdrop-blur-xl">
+            <div className="mb-6 text-center">
+              <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-pink-500/30 border border-pink-400/50 text-3xl">🔑</div>
+              <h2 className="text-2xl font-extrabold tracking-tight text-white drop-shadow-md md:text-3xl">Forget Password?</h2>
+              <p className="mt-2 text-sm text-gray-100">Enter your email to receive a reset code.</p>
+            </div>
+
+            <form onSubmit={handleSendCode} className="space-y-4">
+              <div>
+                <label className="mb-1 block text-sm font-medium text-gray-100">Email Address <span className="text-red-400">*</span></label>
+                <input
+                  type="email"
+                  placeholder="you@example.com"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  className="w-full rounded-lg border border-white/30 bg-white/10 p-3 text-white placeholder-gray-300 backdrop-blur-sm transition focus:border-blue-400 focus:ring-1 focus:ring-blue-400 focus:outline-none"
+                  required
+                />
+              </div>
+              <button type="submit" className="flex w-full items-center justify-center rounded-lg bg-gradient-to-r from-pink-500 to-purple-600 p-3 font-semibold text-white shadow-md transition hover:from-pink-600 hover:to-purple-700">
+                Send Code
+              </button>
+            </form>
+
+            <div className="mt-6 text-center text-sm text-gray-200">
+              <button onClick={() => { setShowForgotPassword(false); setIsLogin(true); }} className="font-semibold text-white hover:underline">
+                Back to Login
+              </button>
+            </div>
+          </div>
+          <div className="max-w-2xl text-center drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)]">
+            <h2 className="text-xl font-bold leading-snug md:text-2xl">Fly away to your next adventure</h2>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // --- LOGIN / SIGNUP UI ---
   return (
-    <div className="flex min-h-screen flex-col items-center justify-center bg-gray-50 p-4">
-      <div className="w-full max-w-md rounded-lg bg-white p-8 shadow-lg">
-        <h1 className="mb-6 text-center text-3xl font-bold text-gray-800">
-          {isLogin ? "Login to TripMate" : "Sign up for TripMate"}
-        </h1>
-        <form onSubmit={handleSubmit} className="space-y-4">
-          {!isLogin && (
-            <input
-              type="text"
-              placeholder="Name"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              className="w-full rounded border p-2"
-              required
-            />
+    <div className="relative min-h-screen w-full overflow-hidden">
+      <div className="absolute inset-0 bg-cover bg-center" style={{ backgroundImage: "url('https://z-cdn-media.chatglm.cn/files/f66aa54a-f370-4739-8e85-576bf31b09c8.jpeg?auth_key=1885990140-11b6f8078b724142b6cc5cdfb0f19528-0-d1d2ef78938e16a5e0a6d72ba81984c4')" }}></div>
+      <div className="absolute inset-0 bg-gradient-to-b from-black/70 via-black/40 to-black/80"></div>
+
+      <div className="relative z-10 flex min-h-screen flex-col items-center justify-between py-12 px-4 text-white">
+        <h1 className="text-4xl font-bold tracking-wider drop-shadow-lg md:text-5xl">✈️ TripMate AI</h1>
+
+        <div className="w-full max-w-md rounded-2xl border border-white/30 bg-white/10 p-8 shadow-2xl backdrop-blur-xl">
+          <div className="mb-6 text-center">
+            <h2 className="text-2xl font-extrabold tracking-tight text-white drop-shadow-md md:text-3xl">
+              {isLogin ? "Welcome back" : "Create your account"}
+            </h2>
+            <p className="mt-2 text-sm text-gray-100">
+              {isLogin ? "Log in to continue planning your trips." : "Start your AI travel planning today."}
+            </p>
+          </div>
+
+          {error && (
+            <div className="mb-4 rounded-lg bg-red-500/20 p-3 text-center text-sm text-red-100 border border-red-400/30">
+              {error}
+            </div>
           )}
-          <input
-            type="email"
-            placeholder="Email"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            className="w-full rounded border p-2"
-            required
-          />
-          <input
-            type="password"
-            placeholder="Password"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            className="w-full rounded border p-2"
-            required
-          />
-          <button
-            type="submit"
-            className="w-full rounded bg-blue-600 p-2 font-semibold text-white hover:bg-blue-700"
-          >
-            {isLogin ? "Login" : "Sign Up"}
-          </button>
-        </form>
-        <button
-          onClick={() => setIsLogin(!isLogin)}
-          className="mt-4 w-full text-center text-sm text-blue-600 hover:underline"
-        >
-          {isLogin ? "Need an account? Sign up" : "Already have an account? Login"}
-        </button>
+
+          <form onSubmit={handleSubmit} className="space-y-4">
+            {!isLogin && (
+              <>
+                <div>
+                  <label className="mb-1 block text-sm font-medium text-gray-100">Full Name <span className="text-red-400">*</span></label>
+                  <input type="text" placeholder="John Doe" value={name} onChange={(e) => setName(e.target.value)} className="w-full rounded-lg border border-white/30 bg-white/10 p-3 text-white placeholder-gray-300 backdrop-blur-sm transition focus:border-blue-400 focus:ring-1 focus:ring-blue-400 focus:outline-none" required />
+                </div>
+                <div>
+                  <label className="mb-1 block text-sm font-medium text-gray-100">Phone Number (10 digits)</label>
+                  <input type="tel" placeholder="1234567890" value={phone} onChange={(e) => setPhone(e.target.value)} className="w-full rounded-lg border border-white/30 bg-white/10 p-3 text-white placeholder-gray-300 backdrop-blur-sm transition focus:border-blue-400 focus:ring-1 focus:ring-blue-400 focus:outline-none" maxLength={10} />
+                </div>
+                <div>
+                  <label className="mb-1 block text-sm font-medium text-gray-100">Date of Birth</label>
+                  <input type="date" value={dob} onChange={(e) => setDob(e.target.value)} className="w-full rounded-lg border border-white/30 bg-white/10 p-3 text-white placeholder-gray-300 backdrop-blur-sm transition focus:border-blue-400 focus:ring-1 focus:ring-blue-400 focus:outline-none [color-scheme:dark]" />
+                </div>
+              </>
+            )}
+            
+            <div>
+              <label className="mb-1 block text-sm font-medium text-gray-100">Email Address <span className="text-red-400">*</span></label>
+              <input type="email" placeholder="you@example.com" value={email} onChange={(e) => setEmail(e.target.value)} className="w-full rounded-lg border border-white/30 bg-white/10 p-3 text-white placeholder-gray-300 backdrop-blur-sm transition focus:border-blue-400 focus:ring-1 focus:ring-blue-400 focus:outline-none" required />
+            </div>
+            
+            <div>
+              <label className="mb-1 block text-sm font-medium text-gray-100">Password <span className="text-red-400">*</span></label>
+              <div className="relative">
+                <input type={showPassword ? "text" : "password"} placeholder="••••••••" value={password} onChange={(e) => setPassword(e.target.value)} className="w-full rounded-lg border border-white/30 bg-white/10 p-3 text-white placeholder-gray-300 backdrop-blur-sm transition focus:border-blue-400 focus:ring-1 focus:ring-blue-400 focus:outline-none" required />
+                <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute inset-y-0 right-0 flex items-center pr-3 text-gray-200 hover:text-white">
+                  {showPassword ? "🙈" : "👁️"}
+                </button>
+              </div>
+              {!isLogin && (
+                <p className="mt-1 text-xs text-gray-300">
+                  Min 6 chars, 1 uppercase, 1 lowercase, 1 number, 1 special char, no spaces.
+                </p>
+              )}
+              {isLogin && (
+                <div className="mt-2 text-right">
+                  <button type="button" onClick={() => setShowForgotPassword(true)} className="text-xs text-gray-200 hover:text-white hover:underline">
+                    Forgot password?
+                  </button>
+                </div>
+              )}
+            </div>
+
+            <button type="submit" disabled={loading} className="flex w-full items-center justify-center rounded-lg bg-gradient-to-r from-pink-500 to-purple-600 p-3 font-semibold text-white shadow-md transition hover:from-pink-600 hover:to-purple-700 disabled:opacity-50">
+              {loading ? "Please wait..." : isLogin ? "Log In" : "Sign Up"}
+            </button>
+          </form>
+
+          <div className="mt-6 text-center text-sm text-gray-200">
+            {isLogin ? "Don't have an account? " : "Already have an account? "}
+            <button onClick={() => { setIsLogin(!isLogin); setError(""); }} className="font-semibold text-white hover:underline">
+              {isLogin ? "Sign up here" : "Log in"}
+            </button>
+          </div>
+        </div>
+
+        <div className="max-w-2xl text-center drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)]">
+          <h2 className="text-xl font-bold leading-snug md:text-2xl">Fly away to your next adventure</h2>
+          <p className="mt-2 text-sm text-gray-100 md:text-base">Your AI-powered travel concierge. Build itineraries, discover destinations, and chat with an AI that knows exactly what you need.</p>
+        </div>
       </div>
     </div>
   );

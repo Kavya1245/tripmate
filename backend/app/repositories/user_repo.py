@@ -13,12 +13,13 @@ class UserRepository(BaseRepository[User, UserCreate]):
         result = await self.db.execute(select(User).where(User.email == email))
         return result.scalar_one_or_none()
 
-    # Override base create to map 'password' to 'hashed_password'
     async def create(self, obj_in: UserCreate) -> User:
         db_obj = User(
             name=obj_in.name,
             email=obj_in.email,
-            hashed_password=obj_in.password # Mapping the field
+            hashed_password=obj_in.password,
+            phone_number=obj_in.phone_number,
+            dob=obj_in.dob
         )
         self.db.add(db_obj)
         await self.db.commit()
