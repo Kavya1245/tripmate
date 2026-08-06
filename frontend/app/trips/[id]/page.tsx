@@ -23,7 +23,6 @@ export default function TripDetailPage({ params }: { params: Promise<{ id: strin
   const [editTime, setEditTime] = useState("");
   const [editNotes, setEditNotes] = useState("");
 
-  // Changed from openDay (boolean accordion) to selectedDay (dropdown value)
   const [selectedDay, setSelectedDay] = useState(1);
   const [currentPage, setCurrentPage] = useState(1);
 
@@ -93,9 +92,10 @@ export default function TripDetailPage({ params }: { params: Promise<{ id: strin
 
   if (tripLoading) return <div className="p-8">Loading trip...</div>;
 
-  const startDate = trip?.start_date ? new Date(trip.start_date) : null;
-  const endDate = trip?.end_date ? new Date(trip.end_date) : null;
-  const totalDays = startDate && endDate ? Math.floor((endDate - startDate) / (1000 * 60 * 60 * 24)) + 1 : 1;
+  // FIX: Properly type dates as Date objects (not null) after loading
+  const startDate = trip?.start_date ? new Date(trip.start_date) : new Date();
+  const endDate = trip?.end_date ? new Date(trip.end_date) : new Date();
+  const totalDays = Math.floor((endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24)) + 1;
 
   const formatDate = (date: Date, addDays = 0) => {
     const newDate = new Date(date);
@@ -105,7 +105,6 @@ export default function TripDetailPage({ params }: { params: Promise<{ id: strin
 
   const allDays = Array.from({ length: totalDays }, (_, i) => i + 1);
 
-  // Get items for the currently selected day
   const selectedDayItems = selectedDay ? (groupedItems?.[selectedDay] || []) : [];
   const totalPages = Math.ceil(selectedDayItems.length / ITEMS_PER_PAGE);
   const paginatedItems = selectedDayItems.slice(
@@ -115,7 +114,7 @@ export default function TripDetailPage({ params }: { params: Promise<{ id: strin
 
   const handleDayChange = (day: number) => {
     setSelectedDay(day);
-    setCurrentPage(1); // Reset to page 1 when changing days
+    setCurrentPage(1);
   };
 
   const startEdit = (item: any) => {
@@ -192,7 +191,6 @@ export default function TripDetailPage({ params }: { params: Promise<{ id: strin
             
             {itemsLoading && <p>Loading activities...</p>}
             
-            {/* Master Box Container with Dropdown */}
             <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
               <div className="p-6 border-b border-gray-100">
                 <label className="block text-xs font-bold text-gray-500 uppercase tracking-wide mb-2">Select Day to View</label>
@@ -209,7 +207,6 @@ export default function TripDetailPage({ params }: { params: Promise<{ id: strin
                 </select>
               </div>
 
-              {/* Activities for Selected Day */}
               <div className="p-6 space-y-4">
                 {paginatedItems.length === 0 ? (
                   <div className="text-center py-8">
