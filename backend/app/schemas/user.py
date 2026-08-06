@@ -1,13 +1,13 @@
 import uuid
-from datetime import datetime, date
+from datetime import datetime
 from pydantic import BaseModel, EmailStr, ConfigDict
 
 class UserCreate(BaseModel):
-    name: str
+    first_name: str
+    last_name: str
     email: EmailStr
     password: str
     phone_number: str | None = None
-    dob: date | None = None
 
 class UserLogin(BaseModel):
     email: EmailStr
@@ -16,10 +16,10 @@ class UserLogin(BaseModel):
 class UserResponse(BaseModel):
     model_config = ConfigDict(from_attributes=True)
     id: uuid.UUID
-    name: str
+    first_name: str
+    last_name: str
     email: EmailStr
     phone_number: str | None = None
-    dob: date | None = None
     role: str
     created_at: datetime
 

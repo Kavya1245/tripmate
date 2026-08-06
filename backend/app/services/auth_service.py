@@ -19,7 +19,13 @@ class AuthService:
             )
         hashed_password = get_password_hash(user_in.password)
         db_user = await self.user_repo.create(
-            UserCreate(name=user_in.name, email=user_in.email, password=hashed_password)
+            UserCreate(
+                first_name=user_in.first_name,
+                last_name=user_in.last_name,
+                email=user_in.email,
+                password=hashed_password,
+                phone_number=user_in.phone_number
+            )
         )
         return db_user
 

@@ -20,7 +20,6 @@ class TripRepository(BaseRepository[Trip, TripCreate]):
         )
         return result.scalar_one_or_none()
 
-    # Create a custom create method to accept user_id
     async def create_trip(self, obj_in: TripCreate, user_id: uuid.UUID) -> Trip:
         db_obj = Trip(
             **obj_in.model_dump(),
@@ -31,6 +30,7 @@ class TripRepository(BaseRepository[Trip, TripCreate]):
         await self.db.refresh(db_obj)
         return db_obj
 
+    # OOP Update method
     async def update(self, db_obj: Trip, obj_in: TripUpdate) -> Trip:
         update_data = obj_in.model_dump(exclude_unset=True)
         for field, value in update_data.items():
@@ -40,6 +40,7 @@ class TripRepository(BaseRepository[Trip, TripCreate]):
         await self.db.refresh(db_obj)
         return db_obj
 
+    # OOP Delete method
     async def delete(self, db_obj: Trip) -> None:
         await self.db.delete(db_obj)
         await self.db.commit()

@@ -23,9 +23,11 @@ class TripService:
         return trip
 
     async def update_trip(self, trip_id: uuid.UUID, trip_in: TripUpdate, user_id: uuid.UUID) -> Trip:
+        # Verify ownership before updating
         trip = await self.get_trip_by_id(trip_id, user_id)
         return await self.trip_repo.update(trip, trip_in)
 
     async def delete_trip(self, trip_id: uuid.UUID, user_id: uuid.UUID) -> None:
+        # Verify ownership before deleting
         trip = await self.get_trip_by_id(trip_id, user_id)
         await self.trip_repo.delete(trip)

@@ -7,29 +7,15 @@ export default function LoginPage() {
   const [isLogin, setIsLogin] = useState(true);
   const [showForgotPassword, setShowForgotPassword] = useState(false);
   
-  const [name, setName] = useState("");
+  const [firstName, setFirstName] = useState("");
+  const [lastName, setLastName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [phone, setPhone] = useState("");
-  const [dob, setDob] = useState("");
-  
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const router = useRouter();
-
-  // Validation Functions
-  const validatePassword = (pwd: string) => {
-    // Min 6 chars, 1 upper, 1 lower, 1 number, 1 special char, no spaces
-    const regex = /^(?=.*[A-Z])(?=.*[a-z])(?=.*\d)(?=.*[^A-Za-z0-9])(?!.*\s).{6,}$/;
-    return regex.test(pwd);
-  };
-
-  const validatePhone = (ph: string) => {
-    // Exactly 10 digits
-    const regex = /^\d{10}$/;
-    return regex.test(ph);
-  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -46,24 +32,12 @@ export default function LoginPage() {
         localStorage.setItem("token", res.data.access_token);
         router.push("/trips");
       } else {
-        // Sign up validations
-        if (!validatePassword(password)) {
-          setError("Password must be min 6 chars, with 1 uppercase, 1 lowercase, 1 number, 1 special char, and no spaces.");
-          setLoading(false);
-          return;
-        }
-        if (phone && !validatePhone(phone)) {
-          setError("Phone number must be exactly 10 digits.");
-          setLoading(false);
-          return;
-        }
-
         await api.post("/auth/signup", { 
-          name, 
+          first_name: firstName, 
+          last_name: lastName, 
           email, 
           password,
-          phone_number: phone || null,
-          dob: dob || null
+          phone_number: phone || null
         });
         setIsLogin(true);
         setError("Signup successful! Please log in.");
@@ -150,7 +124,7 @@ export default function LoginPage() {
           </div>
 
           {error && (
-            <div className="mb-4 rounded-lg bg-red-500/20 p-3 text-center text-sm text-red-100 border border-red-400/30">
+            <div className="mb-4 rounded-lg bg-blue-500/20 p-3 text-center text-sm text-blue-100 border border-blue-400/30">
               {error}
             </div>
           )}
@@ -158,17 +132,19 @@ export default function LoginPage() {
           <form onSubmit={handleSubmit} className="space-y-4">
             {!isLogin && (
               <>
-                <div>
-                  <label className="mb-1 block text-sm font-medium text-gray-100">Full Name <span className="text-red-400">*</span></label>
-                  <input type="text" placeholder="John Doe" value={name} onChange={(e) => setName(e.target.value)} className="w-full rounded-lg border border-white/30 bg-white/10 p-3 text-white placeholder-gray-300 backdrop-blur-sm transition focus:border-blue-400 focus:ring-1 focus:ring-blue-400 focus:outline-none" required />
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="mb-1 block text-sm font-medium text-gray-100">First Name <span className="text-red-400">*</span></label>
+                    <input type="text" placeholder="John" value={firstName} onChange={(e) => setFirstName(e.target.value)} className="w-full rounded-lg border border-white/30 bg-white/10 p-3 text-white placeholder-gray-300 backdrop-blur-sm transition focus:border-blue-400 focus:ring-1 focus:ring-blue-400 focus:outline-none" required />
+                  </div>
+                  <div>
+                    <label className="mb-1 block text-sm font-medium text-gray-100">Last Name <span className="text-red-400">*</span></label>
+                    <input type="text" placeholder="Doe" value={lastName} onChange={(e) => setLastName(e.target.value)} className="w-full rounded-lg border border-white/30 bg-white/10 p-3 text-white placeholder-gray-300 backdrop-blur-sm transition focus:border-blue-400 focus:ring-1 focus:ring-blue-400 focus:outline-none" required />
+                  </div>
                 </div>
                 <div>
-                  <label className="mb-1 block text-sm font-medium text-gray-100">Phone Number (10 digits)</label>
-                  <input type="tel" placeholder="1234567890" value={phone} onChange={(e) => setPhone(e.target.value)} className="w-full rounded-lg border border-white/30 bg-white/10 p-3 text-white placeholder-gray-300 backdrop-blur-sm transition focus:border-blue-400 focus:ring-1 focus:ring-blue-400 focus:outline-none" maxLength={10} />
-                </div>
-                <div>
-                  <label className="mb-1 block text-sm font-medium text-gray-100">Date of Birth</label>
-                  <input type="date" value={dob} onChange={(e) => setDob(e.target.value)} className="w-full rounded-lg border border-white/30 bg-white/10 p-3 text-white placeholder-gray-300 backdrop-blur-sm transition focus:border-blue-400 focus:ring-1 focus:ring-blue-400 focus:outline-none [color-scheme:dark]" />
+                  <label className="mb-1 block text-sm font-medium text-gray-100">Phone Number</label>
+                  <input type="tel" placeholder="+1 234 567 890" value={phone} onChange={(e) => setPhone(e.target.value)} className="w-full rounded-lg border border-white/30 bg-white/10 p-3 text-white placeholder-gray-300 backdrop-blur-sm transition focus:border-blue-400 focus:ring-1 focus:ring-blue-400 focus:outline-none" />
                 </div>
               </>
             )}

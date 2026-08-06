@@ -27,24 +27,24 @@ async def get_trip(trip_id: uuid.UUID, db: AsyncSession = Depends(get_db), curre
     service = TripService(db)
     return await service.get_trip_by_id(trip_id, current_user.id)
 
+# EDIT ENDPOINT
 @router.put("/{trip_id}", response_model=TripResponse)
 async def update_trip(trip_id: uuid.UUID, trip_in: TripUpdate, db: AsyncSession = Depends(get_db), current_user: User = Depends(get_current_user)):
     service = TripService(db)
     return await service.update_trip(trip_id, trip_in, current_user.id)
 
+# DELETE ENDPOINT
 @router.delete("/{trip_id}", status_code=status.HTTP_204_NO_CONTENT)
 async def delete_trip(trip_id: uuid.UUID, db: AsyncSession = Depends(get_db), current_user: User = Depends(get_current_user)):
     service = TripService(db)
     await service.delete_trip(trip_id, current_user.id)
     return None
 
-# NEW: Direct PDF Download Endpoint
 @router.get("/{trip_id}/download-pdf")
 async def download_pdf(trip_id: uuid.UUID, db: AsyncSession = Depends(get_db), current_user: User = Depends(get_current_user)):
     service = TripService(db)
     trip = await service.get_trip_by_id(trip_id, current_user.id)
     
-    # Fetch itinerary items for the PDF
     from app.models.itinerary import ItineraryItem
     from sqlalchemy import select
     items_res = await db.execute(select(ItineraryItem).where(ItineraryItem.trip_id == trip_id).order_by(ItineraryItem.day_no))
@@ -66,7 +66,6 @@ async def download_pdf(trip_id: uuid.UUID, db: AsyncSession = Depends(get_db), c
         headers={"Content-Disposition": f"attachment; filename=tripmate_itinerary.pdf"}
     )
 
-# Keep the background job endpoint for Milestone 7 compliance
 @router.post("/{trip_id}/generate-pdf", status_code=status.HTTP_202_ACCEPTED)
 async def generate_pdf_background(trip_id: uuid.UUID, background_tasks: BackgroundTasks, db: AsyncSession = Depends(get_db), current_user: User = Depends(get_current_user)):
     service = TripService(db)

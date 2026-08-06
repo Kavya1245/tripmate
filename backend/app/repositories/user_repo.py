@@ -15,11 +15,11 @@ class UserRepository(BaseRepository[User, UserCreate]):
 
     async def create(self, obj_in: UserCreate) -> User:
         db_obj = User(
-            name=obj_in.name,
+            first_name=obj_in.first_name,
+            last_name=obj_in.last_name,
             email=obj_in.email,
             hashed_password=obj_in.password,
-            phone_number=obj_in.phone_number,
-            dob=obj_in.dob
+            phone_number=obj_in.phone_number
         )
         self.db.add(db_obj)
         await self.db.commit()
