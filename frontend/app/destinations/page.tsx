@@ -9,15 +9,15 @@ export default function DestinationsPage() {
   const [search, setSearch] = useState("");
   const qc = useQueryClient();
   
+  // Fetch up to 100 destinations
   const { data: destinations, isLoading } = useQuery({
     queryKey: ["destinations"],
     queryFn: async () => {
-      const res = await api.get("/destinations/");
+      const res = await api.get("/destinations/?limit=100");
       return res.data;
     },
   });
 
-  // Mutation to call the backend external API endpoint
   const fetchExternal = useMutation({
     mutationFn: async () => {
       const res = await api.post("/destinations/seed-external");
@@ -29,7 +29,6 @@ export default function DestinationsPage() {
     onError: (err: any) => alert("Error fetching external data: " + JSON.stringify(err.response?.data?.detail || err.message))
   });
 
-  // Instant Filtering Logic
   const filteredDestinations = destinations?.filter((dest: any) => {
     const lowerSearch = search.toLowerCase();
     return (
@@ -46,32 +45,28 @@ export default function DestinationsPage() {
       <Sidebar />
       
       <div className="flex-1 p-8">
-        <div className="mx-auto max-w-5xl">
+        <div className="mx-auto max-w-7xl">
           <div className="flex items-center justify-between mb-6">
             <h1 className="text-3xl font-bold text-gray-800">Discover Destinations</h1>
             <button 
               onClick={() => fetchExternal.mutate()}
               disabled={fetchExternal.isPending}
-              className="rounded-lg bg-green-600 px-4 py-2 text-sm font-semibold text-white hover:bg-green-700 transition-colors disabled:opacity-50"
+              className="rounded-lg bg-green-600 px-4 py-2 text-sm font-semibold text-white hover:bg-green-700 transition-colors disabled:opacity-50 shadow-sm"
             >
-              {fetchExternal.isPending ? "Fetching..." : "Fetch World Destinations"}
+              {fetchExternal.isPending ? "Fetching 50+ Places..." : "Fetch World Destinations"}
             </button>
           </div>
           
-          {/* Search Bar inside a Form for Enter Key support */}
           <form onSubmit={(e) => { e.preventDefault(); }} className="mb-8">
             <div className="flex gap-2">
               <input
                 type="text"
-                placeholder="Search by name, country, or tags (e.g., beach, Paris)..."
+                placeholder="Search by name, country, or tags (e.g., India, beach, Eiffel)..."
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
                 className="flex-1 rounded-xl border border-gray-300 p-4 shadow-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-500 focus:outline-none text-lg"
               />
-              <button 
-                type="submit"
-                className="rounded-xl bg-blue-600 px-8 py-4 text-lg font-semibold text-white hover:bg-blue-700 transition-colors"
-              >
+              <button type="submit" className="rounded-xl bg-blue-600 px-8 py-4 text-lg font-semibold text-white hover:bg-blue-700 transition-colors">
                 Search
               </button>
             </div>

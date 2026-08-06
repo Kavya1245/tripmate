@@ -6,18 +6,23 @@ import api from "@/lib/api";
 import Sidebar from "@/components/Sidebar";
 import ChatWidget from "@/components/ChatWidget";
 
+const TRIPS_PER_PAGE = 3;
+
 export default function TripsPage() {
   const qc = useQueryClient();
   const [title, setTitle] = useState("");
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
   const [showSuggestions, setShowSuggestions] = useState(false);
+  const [activeTab, setActiveTab] = useState<"upcoming" | "past">("upcoming");
+  
+  // Pagination State
+  const [currentPage, setCurrentPage] = useState(1);
 
-  // Fetch all destinations for the autocomplete dropdown
   const { data: allDestinations } = useQuery({
     queryKey: ["all-destinations-mini"],
     queryFn: async () => {
-      const res = await api.get("/destinations/?limit=100"); // Fetch up to 100
+      const res = await api.get("/destinations/?limit=100");
       return res.data;
     },
   });
@@ -49,7 +54,26 @@ export default function TripsPage() {
 
   if (isLoading) return <div className="p-8">Loading trips...</div>;
 
-  // Filter destinations based on what the user is typing
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+
+  const upcomingTrips = trips?.filter((trip: any) => new Date(trip.end_date) >= today) || [];
+  const pastTrips = trips?.filter((trip: any) => new Date(trip.end_date) < today) || [];
+  
+  const displayedTrips = activeTab === "upcoming" ? upcomingTrips : pastTrips;
+
+  // Pagination Logic
+  const totalPages = Math.ceil(displayedTrips.length / TRIPS_PER_PAGE);
+  const paginatedTrips = displayedTrips.slice(
+    (currentPage - 1) * TRIPS_PER_PAGE,
+    currentPage * TRIPS_PER_PAGE
+  );
+
+  const handleTabChange = (tab: "upcoming" | "past") => {
+    setActiveTab(tab);
+    setCurrentPage(1); // Reset to page 1 when switching tabs
+  };
+
   const filteredSuggestions = allDestinations?.filter((dest: any) => {
     if (!title) return false;
     const lowerTitle = title.toLowerCase();
@@ -57,7 +81,7 @@ export default function TripsPage() {
       dest.name.toLowerCase().includes(lowerTitle) ||
       dest.country.toLowerCase().includes(lowerTitle)
     );
-  }).slice(0, 5); // Limit to 5 suggestions
+  }).slice(0, 5);
 
   return (
     <div className="flex min-h-screen bg-gray-50">
@@ -85,7 +109,6 @@ export default function TripsPage() {
               }}
               className="grid grid-cols-1 md:grid-cols-4 gap-6"
             >
-              {/* Autocomplete Input Container */}
               <div className="flex flex-col relative">
                 <label className="mb-2 text-sm font-semibold text-gray-600">Where to?</label>
                 <input
@@ -97,12 +120,11 @@ export default function TripsPage() {
                     setShowSuggestions(true);
                   }}
                   onFocus={() => setShowSuggestions(true)}
-                  onBlur={() => setTimeout(() => setShowSuggestions(false), 200)} // Delay to allow click
+                  onBlur={() => setTimeout(() => setShowSuggestions(false), 200)}
                   className="rounded-lg border border-gray-300 p-3 focus:ring-2 focus:ring-blue-500 focus:outline-none transition z-10"
                   required
                 />
                 
-                {/* Autocomplete Dropdown */}
                 {showSuggestions && filteredSuggestions && filteredSuggestions.length > 0 && (
                   <div className="absolute top-full mt-1 w-full bg-white border border-gray-200 rounded-lg shadow-xl max-h-60 overflow-auto z-20">
                     {filteredSuggestions.map((dest: any) => (
@@ -156,10 +178,33 @@ export default function TripsPage() {
             </form>
           </div>
 
-          {/* Trips Grid */}
-          <h2 className="text-2xl font-bold text-gray-800 mb-6">Upcoming & Past Trips</h2>
+          {/* Tab Bar for Upcoming / Past */}
+          <div className="flex items-center gap-4 mb-8 border-b border-gray-200">
+            <button
+              onClick={() => handleTabChange("upcoming")}
+              className={`pb-4 px-2 font-bold text-lg transition-colors relative ${
+                activeTab === "upcoming" ? "text-blue-600" : "text-gray-500 hover:text-gray-800"
+              }`}
+            >
+              Upcoming Trips
+              <span className="ml-2 text-sm bg-gray-100 text-gray-600 px-2 py-0.5 rounded-full">{upcomingTrips.length}</span>
+              {activeTab === "upcoming" && <div className="absolute bottom-0 left-0 right-0 h-1 bg-blue-600 rounded-t-full"></div>}
+            </button>
+            <button
+              onClick={() => handleTabChange("past")}
+              className={`pb-4 px-2 font-bold text-lg transition-colors relative ${
+                activeTab === "past" ? "text-blue-600" : "text-gray-500 hover:text-gray-800"
+              }`}
+            >
+              Past Trips
+              <span className="ml-2 text-sm bg-gray-100 text-gray-600 px-2 py-0.5 rounded-full">{pastTrips.length}</span>
+              {activeTab === "past" && <div className="absolute bottom-0 left-0 right-0 h-1 bg-blue-600 rounded-t-full"></div>}
+            </button>
+          </div>
+
+          {/* Trips Grid (Paginated) */}
           <div className="grid gap-8 md:grid-cols-2 lg:grid-cols-3">
-            {trips?.map((trip: any) => (
+            {paginatedTrips.map((trip: any) => (
               <Link 
                 key={trip.id} 
                 href={`/trips/${trip.id}`} 
@@ -189,12 +234,37 @@ export default function TripsPage() {
               </Link>
             ))}
             
-            {trips?.length === 0 && (
+            {displayedTrips.length === 0 && (
               <div className="col-span-3 text-center py-16 bg-white rounded-2xl border border-dashed border-gray-200">
-                <p className="text-xl text-gray-400">No trips yet. Plan your first adventure above!</p>
+                <p className="text-xl text-gray-400 font-medium">
+                  {activeTab === "upcoming" ? "No upcoming trips. Plan your next adventure above!" : "No past trips yet."}
+                </p>
               </div>
             )}
           </div>
+
+          {/* Pagination Controls */}
+          {totalPages > 1 && (
+            <div className="flex items-center justify-center gap-4 mt-12">
+              <button 
+                onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+                disabled={currentPage === 1}
+                className="px-6 py-2 text-sm font-medium text-gray-600 bg-white border border-gray-200 rounded-lg disabled:opacity-50 hover:bg-gray-50 transition-colors shadow-sm"
+              >
+                ← Prev
+              </button>
+              <span className="text-sm font-medium text-gray-700">
+                Page {currentPage} of {totalPages}
+              </span>
+              <button 
+                onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
+                disabled={currentPage === totalPages}
+                className="px-6 py-2 text-sm font-medium text-gray-600 bg-white border border-gray-200 rounded-lg disabled:opacity-50 hover:bg-gray-50 transition-colors shadow-sm"
+              >
+                Next →
+              </button>
+            </div>
+          )}
         </div>
       </div>
       
