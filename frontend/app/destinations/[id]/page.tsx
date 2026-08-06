@@ -99,7 +99,7 @@ export default function DestinationDetailPage({ params }: { params: Promise<{ id
                     <div className="flex items-center justify-between mb-2">
                       <div className="flex items-center gap-3">
                         <div className="h-10 w-10 rounded-full bg-blue-100 flex items-center justify-center font-bold text-blue-600">U</div>
-                        <span className="font-semibold text-gray-900">Anonymous User</span>
+                        <span className="font-semibold text-gray-900">{rev.user_name || "Anonymous User"}</span>
                       </div>
                       <span className="text-yellow-500 text-lg">{"⭐".repeat(rev.rating)}</span>
                     </div>
