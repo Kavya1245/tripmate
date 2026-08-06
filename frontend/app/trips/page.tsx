@@ -1,14 +1,12 @@
 "use client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
-import { useRouter } from "next/navigation";
 import Link from "next/link";
 import api from "@/lib/api";
 import Sidebar from "@/components/Sidebar";
 import ChatWidget from "@/components/ChatWidget";
 
 export default function TripsPage() {
-  const router = useRouter();
   const qc = useQueryClient();
   const [title, setTitle] = useState("");
   const [startDate, setStartDate] = useState("");
