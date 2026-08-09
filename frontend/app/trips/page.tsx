@@ -22,7 +22,7 @@ export default function TripsPage() {
   const [tripSearchQuery, setTripSearchQuery] = useState("");
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [openMenuId, setOpenMenuId] = useState<string | null>(null);
-  const { formatCurrency, currency, symbol } = useCurrency();
+  const { formatCurrency, currency, symbol, toBaseUSD } = useCurrency();
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [editingTrip, setEditingTrip] = useState<any | null>(null);
 
@@ -91,7 +91,7 @@ export default function TripsPage() {
   const handleUpdateSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!editingTrip) return;
-    updateMutation.mutate({ id: editingTrip.id, data: { title: editingTrip.title, start_date: editingTrip.start_date, end_date: editingTrip.end_date, budget: Number(editingTrip.budget) || 0, status: editingTrip.status || "planning" } });
+    updateMutation.mutate({ id: editingTrip.id, data: { title: editingTrip.title, start_date: editingTrip.start_date, end_date: editingTrip.end_date, budget: toBaseUSD(editingTrip.budget) || 0, status: editingTrip.status || "planning" } });
   };
 
   const handleAIPlanner = () => {
@@ -119,7 +119,7 @@ export default function TripsPage() {
             <div className="lg:col-span-1 overflow-y-auto pr-2">
               <div className="bg-white rounded-2xl shadow-sm p-6 border border-gray-100">
                 <h2 className="text-xl font-bold text-gray-800 mb-6">Plan a New Trip</h2>
-                <form onSubmit={(e) => { e.preventDefault(); addMutation.mutate({ title, start_date: startDate, end_date: endDate, budget: Number(budget), status: "planning" }); }} className="space-y-5">
+                <form onSubmit={(e) => { e.preventDefault(); addMutation.mutate({ title, start_date: startDate, end_date: endDate, budget: toBaseUSD(budget), status: "planning" }); }} className="space-y-5">
                   <div className="relative">
                     <label className="block text-xs font-bold text-gray-500 uppercase tracking-wide mb-2">Where to?</label>
                     <input 

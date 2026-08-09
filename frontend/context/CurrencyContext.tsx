@@ -26,8 +26,16 @@ export function CurrencyProvider({ children }: { children: ReactNode }) {
     return `${symbols[currency] || ''}${formattedNum}`;
   };
 
+  // Converts an input amount from the selected currency back to USD for database storage
+  const toBaseUSD = (amount: number | string | undefined | null) => {
+    const num = Number(amount) || 0;
+    const rate = rates[currency] || 1;
+    if (rate === 0) return 0;
+    return num / rate;
+  };
+
   return (
-    <CurrencyContext.Provider value={{ currency, setCurrency, formatCurrency, symbol: symbols[currency] || "$" }}>
+    <CurrencyContext.Provider value={{ currency, setCurrency, formatCurrency, toBaseUSD, symbol: symbols[currency] || "$" }}>
       {children}
     </CurrencyContext.Provider>
   );

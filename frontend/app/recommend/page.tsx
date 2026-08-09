@@ -14,7 +14,7 @@ export default function RecommendPage() {
   const [error, setError] = useState("");
 
   // Get currency and formatCurrency from the global context
-  const { formatCurrency, currency } = useCurrency();
+  const { formatCurrency, currency, toBaseUSD } = useCurrency();
 
   const handleRecommend = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -24,7 +24,7 @@ export default function RecommendPage() {
 
     try {
       const res = await api.post("/ml/recommend", { 
-        budget: Number(budget), 
+        budget: toBaseUSD(budget), 
         tags, 
         duration: Number(duration),
         travel_style: travelStyle

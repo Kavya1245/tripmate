@@ -35,7 +35,6 @@ openai==2.53.0
 passlib==1.7.4
 pluggy==1.6.0
 propcache==0.5.2
-psycopg2-binary==2.9.9
 pyasn1==0.6.4
 pycparser==3.0
 pydantic==2.13.4
