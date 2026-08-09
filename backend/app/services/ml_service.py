@@ -1,6 +1,3 @@
-import pandas as pd
-from sklearn.neighbors import NearestNeighbors
-from sklearn.preprocessing import MinMaxScaler
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
 from app.models.destination import Destination
@@ -10,10 +7,15 @@ class MLRecommenderService:
         self.db = db
         self.model = None
         self.df = None
-        self.scaler = MinMaxScaler()
+        self.scaler = None
         self.feature_columns = []
 
     async def _load_and_train(self):
+        # LAZY LOAD: Only import these heavy libraries when this function is actually called
+        import pandas as pd
+        from sklearn.neighbors import NearestNeighbors
+        from sklearn.preprocessing import MinMaxScaler
+        
         result = await self.db.execute(select(Destination))
         destinations = result.scalars().all()
         if not destinations:
@@ -29,10 +31,8 @@ class MLRecommenderService:
         } for d in destinations]
         self.df = pd.DataFrame(data)
 
-        # One-Hot Encode the tags
         tags_split = self.df["tags"].str.get_dummies(sep=",")
-        
-        # Scale the budget and rename to 'budget_feature' to avoid column name collisions
+        self.scaler = MinMaxScaler()
         budget_scaled = self.scaler.fit_transform(self.df[["budget"]])
         budget_df = pd.DataFrame(budget_scaled, columns=["budget_feature"])
         
@@ -45,6 +45,7 @@ class MLRecommenderService:
         return True
 
     async def recommend(self, user_budget: float, user_tags: str, duration: int, travel_style: str) -> list[dict]:
+        import pandas as pd
         trained = await self._load_and_train()
         if not trained:
             return []
@@ -52,27 +53,22 @@ class MLRecommenderService:
         combined_tags = f"{user_tags},{travel_style}".lower()
         user_tags_split = pd.Series([combined_tags]).str.get_dummies(sep=",")
         
-        # Ensure user tags have the same columns as the training data
         for col in self.feature_columns:
             if col not in user_tags_split.columns:
                 user_tags_split[col] = 0
         user_tags_split = user_tags_split[self.feature_columns]
 
-        # Scale user budget
         user_budget_scaled = self.scaler.transform([[user_budget]])
         user_budget_df = pd.DataFrame(user_budget_scaled, columns=["budget_feature"])
         
-        # Safely drop 'budget_feature' from tags if it was accidentally added
         if "budget_feature" in user_tags_split.columns:
             user_tags_split = user_tags_split.drop(columns=["budget_feature"])
 
         user_features = pd.concat([user_budget_df, user_tags_split], axis=1)
         user_features = user_features[self.feature_columns]
 
-        # Find distances and indices
         distances, indices = self.model.kneighbors(user_features)
         
-        # Format results with Match Score
         recommended = self.df.iloc[indices[0]].copy()
         recommended["distance"] = distances[0]
         
