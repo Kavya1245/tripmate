@@ -17,7 +17,8 @@ async def analyze_image(
     service = CVService()
     
     try:
-        results = service.analyze_image(image_bytes)
-        return {"filename": file.filename, "predictions": results}
+        # FIX: Added 'await' here because the service function is async
+        insights = await service.analyze_image(image_bytes)
+        return insights
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))

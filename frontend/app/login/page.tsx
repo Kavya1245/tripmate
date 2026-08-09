@@ -1,6 +1,7 @@
 "use client";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import api from "@/lib/api";
 
 export default function LoginPage() {
@@ -17,10 +18,43 @@ export default function LoginPage() {
   const [loading, setLoading] = useState(false);
   const router = useRouter();
 
+  // --- VALIDATION LOGIC ---
+  
+  // Name: Allow only letters and spaces
+  const handleNameChange = (e: React.ChangeEvent<HTMLInputElement>, setter: (val: string) => void) => {
+    const val = e.target.value.replace(/[^a-zA-Z\s]/g, ''); // Strip numbers and special chars
+    setter(val);
+  };
+
+  // Phone: Allow exactly 10 digits only
+  const handlePhoneChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const val = e.target.value.replace(/[^0-9]/g, ''); // Strip non-digits
+    if (val.length <= 10) setPhone(val);
+  };
+
+  const validateEmail = (val: string) => {
+    const re = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
+    return re.test(val);
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
     setError("");
+    
+    // Frontend validation checks before sending to backend
+    if (!isLogin) {
+      if (!validateEmail(email)) {
+        setError("Please enter a valid email address.");
+        setLoading(false);
+        return;
+      }
+      if (phone && phone.length !== 10) {
+        setError("Phone number must be exactly 10 digits.");
+        setLoading(false);
+        return;
+      }
+    }
     
     try {
       if (isLogin) {
@@ -111,6 +145,11 @@ export default function LoginPage() {
       <div className="absolute inset-0 bg-gradient-to-b from-black/70 via-black/40 to-black/80"></div>
 
       <div className="relative z-10 flex min-h-screen flex-col items-center justify-between py-12 px-4 text-white">
+        <div className="w-full max-w-md flex justify-between items-center mb-4">
+          <Link href="/" className="text-sm text-gray-200 hover:text-white transition-colors flex items-center gap-1">
+            ← Back to Home
+          </Link>
+        </div>
         <h1 className="text-4xl font-bold tracking-wider drop-shadow-lg md:text-5xl">✈️ TripMate AI</h1>
 
         <div className="w-full max-w-md rounded-2xl border border-white/30 bg-white/10 p-8 shadow-2xl backdrop-blur-xl">
@@ -124,7 +163,7 @@ export default function LoginPage() {
           </div>
 
           {error && (
-            <div className="mb-4 rounded-lg bg-blue-500/20 p-3 text-center text-sm text-blue-100 border border-blue-400/30">
+            <div className="mb-4 rounded-lg bg-red-500/20 p-3 text-center text-sm text-red-100 border border-red-400/30">
               {error}
             </div>
           )}
@@ -135,23 +174,50 @@ export default function LoginPage() {
                 <div className="grid grid-cols-2 gap-4">
                   <div>
                     <label className="mb-1 block text-sm font-medium text-gray-100">First Name <span className="text-red-400">*</span></label>
-                    <input type="text" placeholder="John" value={firstName} onChange={(e) => setFirstName(e.target.value)} className="w-full rounded-lg border border-white/30 bg-white/10 p-3 text-white placeholder-gray-300 backdrop-blur-sm transition focus:border-blue-400 focus:ring-1 focus:ring-blue-400 focus:outline-none" required />
+                    <input 
+                      type="text" 
+                      placeholder="John" 
+                      value={firstName} 
+                      onChange={(e) => handleNameChange(e, setFirstName)} 
+                      className="w-full rounded-lg border border-white/30 bg-white/10 p-3 text-white placeholder-gray-300 backdrop-blur-sm transition focus:border-blue-400 focus:ring-1 focus:ring-blue-400 focus:outline-none" 
+                      required 
+                    />
                   </div>
                   <div>
                     <label className="mb-1 block text-sm font-medium text-gray-100">Last Name <span className="text-red-400">*</span></label>
-                    <input type="text" placeholder="Doe" value={lastName} onChange={(e) => setLastName(e.target.value)} className="w-full rounded-lg border border-white/30 bg-white/10 p-3 text-white placeholder-gray-300 backdrop-blur-sm transition focus:border-blue-400 focus:ring-1 focus:ring-blue-400 focus:outline-none" required />
+                    <input 
+                      type="text" 
+                      placeholder="Doe" 
+                      value={lastName} 
+                      onChange={(e) => handleNameChange(e, setLastName)} 
+                      className="w-full rounded-lg border border-white/30 bg-white/10 p-3 text-white placeholder-gray-300 backdrop-blur-sm transition focus:border-blue-400 focus:ring-1 focus:ring-blue-400 focus:outline-none" 
+                      required 
+                    />
                   </div>
                 </div>
                 <div>
-                  <label className="mb-1 block text-sm font-medium text-gray-100">Phone Number</label>
-                  <input type="tel" placeholder="+1 234 567 890" value={phone} onChange={(e) => setPhone(e.target.value)} className="w-full rounded-lg border border-white/30 bg-white/10 p-3 text-white placeholder-gray-300 backdrop-blur-sm transition focus:border-blue-400 focus:ring-1 focus:ring-blue-400 focus:outline-none" />
+                  <label className="mb-1 block text-sm font-medium text-gray-100">Phone Number (10 digits)</label>
+                  <input 
+                    type="tel" 
+                    placeholder="1234567890" 
+                    value={phone} 
+                    onChange={handlePhoneChange} 
+                    className="w-full rounded-lg border border-white/30 bg-white/10 p-3 text-white placeholder-gray-300 backdrop-blur-sm transition focus:border-blue-400 focus:ring-1 focus:ring-blue-400 focus:outline-none" 
+                  />
                 </div>
               </>
             )}
             
             <div>
               <label className="mb-1 block text-sm font-medium text-gray-100">Email Address <span className="text-red-400">*</span></label>
-              <input type="email" placeholder="you@example.com" value={email} onChange={(e) => setEmail(e.target.value)} className="w-full rounded-lg border border-white/30 bg-white/10 p-3 text-white placeholder-gray-300 backdrop-blur-sm transition focus:border-blue-400 focus:ring-1 focus:ring-blue-400 focus:outline-none" required />
+              <input 
+                type="email" 
+                placeholder="you@example.com" 
+                value={email} 
+                onChange={(e) => setEmail(e.target.value)} 
+                className="w-full rounded-lg border border-white/30 bg-white/10 p-3 text-white placeholder-gray-300 backdrop-blur-sm transition focus:border-blue-400 focus:ring-1 focus:ring-blue-400 focus:outline-none" 
+                required 
+              />
             </div>
             
             <div>

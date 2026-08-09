@@ -1,14 +1,14 @@
 "use client";
 import Link from "next/link";
+import { useCurrency } from "@/context/CurrencyContext";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
-import ChatWidget from "./ChatWidget";
 
 export default function Sidebar() {
   const pathname = usePathname();
   const router = useRouter();
-  const [isChatOpen, setIsChatOpen] = useState(false);
-
+  const { currency, setCurrency } = useCurrency();
+  
   useEffect(() => {
     const token = localStorage.getItem("token");
     if (!token) router.push("/login");
@@ -20,11 +20,12 @@ export default function Sidebar() {
   };
 
   const navItems = [
-    { name: "Dashboard", href: "/trips", icon: "🏠" },
+    { name: "AI Chat Planner", href: "/chat", icon: "💬" },
+    { name: "My Trips", href: "/trips", icon: "🏠" },
     { name: "Discover", href: "/destinations", icon: "🗺️" },
     { name: "Recognize", href: "/recognize", icon: "📸" },
     { name: "Recommend", href: "/recommend", icon: "🤖" },
-    { name: "Analytics", href: "/analytics", icon: "📊" },
+    
   ];
 
   return (
@@ -50,15 +51,21 @@ export default function Sidebar() {
             </Link>
           ))}
 
-          {/* Ask AI Button */}
-          <button 
-            onClick={() => setIsChatOpen(true)}
-            className="w-full flex items-center px-4 py-3 rounded-lg transition-colors text-gray-400 hover:bg-gray-800 hover:text-white"
-          >
-            <span className="mr-3 text-xl">💬</span>
-            <span className="font-medium">Ask AI</span>
-          </button>
         </nav>
+
+        <div className="px-4 mb-4 flex-shrink-0">
+          <label className="text-xs text-gray-500 uppercase tracking-wider mb-2 block">Select Currency</label>
+          <select 
+            value={currency}
+            onChange={(e) => setCurrency(e.target.value)}
+            className="w-full bg-gray-800 text-white border border-gray-700 rounded-lg p-2 text-sm focus:ring-1 focus:ring-blue-500 focus:outline-none"
+          >
+            <option value="INR">₹ INR (Indian Rupee)</option>
+            <option value="USD">$ USD (US Dollar)</option>
+            <option value="EUR">€ EUR (Euro)</option>
+            <option value="GBP">£ GBP (Pound)</option>
+          </select>
+        </div>
 
         <div className="p-4 border-t border-gray-800 flex-shrink-0">
           <button
@@ -71,8 +78,6 @@ export default function Sidebar() {
         </div>
       </div>
 
-      {/* Render the Chat Widget globally from the Sidebar */}
-      <ChatWidget isOpen={isChatOpen} setIsOpen={setIsChatOpen} />
     </>
   );
 }

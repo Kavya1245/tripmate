@@ -4,6 +4,7 @@ import { useState, use, useMemo } from "react";
 import Link from "next/link";
 import api from "@/lib/api";
 import Sidebar from "@/components/Sidebar";
+import { useCurrency } from "@/context/CurrencyContext";
 
 const ITEMS_PER_PAGE = 4;
 
@@ -18,6 +19,7 @@ export default function TripDetailPage({ params }: { params: Promise<{ id: strin
   const [notes, setNotes] = useState("");
 
   const [editingId, setEditingId] = useState<string | null>(null);
+  const { formatCurrency } = useCurrency();
   const [editDayNo, setEditDayNo] = useState(1);
   const [editActivity, setEditActivity] = useState("");
   const [editTime, setEditTime] = useState("");
@@ -168,7 +170,7 @@ export default function TripDetailPage({ params }: { params: Promise<{ id: strin
                 <span className="text-2xl">💰</span>
                 <div>
                   <p className="text-xs text-blue-100 uppercase tracking-wide">Budget</p>
-                  <p className="font-bold">${trip?.budget}</p>
+                  <p className="font-bold">{formatCurrency(trip?.budget)}</p>
                 </div>
               </div>
             </div>

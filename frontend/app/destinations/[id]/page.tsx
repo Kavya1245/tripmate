@@ -4,6 +4,7 @@ import { useState, use } from "react";
 import Link from "next/link";
 import api from "@/lib/api";
 import Sidebar from "@/components/Sidebar";
+import { useCurrency } from "@/context/CurrencyContext";
 
 export default function DestinationDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const resolvedParams = use(params);
@@ -11,6 +12,7 @@ export default function DestinationDetailPage({ params }: { params: Promise<{ id
 
   const qc = useQueryClient();
   const [rating, setRating] = useState(5);
+  const { formatCurrency } = useCurrency();
   const [hover, setHover] = useState(0);
   const [comment, setComment] = useState("");
 
@@ -43,6 +45,13 @@ export default function DestinationDetailPage({ params }: { params: Promise<{ id
     onError: (err: any) => alert("Error posting review: " + JSON.stringify(err.response?.data?.detail || err.message))
   });
 
+  const externalQuotes = [
+    "An absolutely breathtaking experience. The architecture and history are unmatched. A must-visit!",
+    "Great place to spend the day. Be sure to arrive early to beat the crowds. Highly recommended.",
+    "Beautiful scenery and rich culture. The local food nearby is also fantastic. Will come back again!",
+    "A bit crowded but totally worth it. The photos don't do justice to how massive and beautiful it is."
+  ];
+
   if (destLoading) return <div className="p-8">Loading destination...</div>;
 
   return (
@@ -68,7 +77,7 @@ export default function DestinationDetailPage({ params }: { params: Promise<{ id
               <h1 className="text-4xl md:text-6xl font-extrabold drop-shadow-2xl mb-2">{dest?.name}</h1>
               <div className="flex items-center gap-6 text-lg font-medium drop-shadow-md">
                 <span className="flex items-center gap-2">📍 {dest?.country}</span>
-                <span className="flex items-center gap-2">💰 Avg. Budget: ${dest?.avg_budget}</span>
+                <span className="flex items-center gap-2">💰 Avg. Budget: {formatCurrency(dest?.avg_budget)}</span>
               </div>
             </div>
           </div>

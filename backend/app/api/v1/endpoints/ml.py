@@ -10,7 +10,9 @@ router = APIRouter()
 
 class RecommendationRequest(BaseModel):
     budget: float
-    tags: str  # e.g., "beach,romance"
+    tags: str
+    duration: int = 5
+    travel_style: str = "Balanced"
 
 @router.post("/recommend")
 async def get_recommendations(
@@ -19,5 +21,5 @@ async def get_recommendations(
     current_user: User = Depends(get_current_user)
 ):
     service = MLRecommenderService(db)
-    recommendations = await service.recommend(req.budget, req.tags)
+    recommendations = await service.recommend(req.budget, req.tags, req.duration, req.travel_style)
     return {"user_budget": req.budget, "recommendations": recommendations}
