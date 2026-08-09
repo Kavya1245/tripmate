@@ -1,29 +1,43 @@
-import io
 import json
 import re
+import io
 from openai import AsyncOpenAI
+from transformers import pipeline
 from app.core.config import settings
 
 class CVService:
     def __init__(self):
         self.client = AsyncOpenAI(api_key=settings.GROQ_API_KEY, base_url="https://api.groq.com/openai/v1")
+        # Use OpenAI CLIP for Zero-Shot Classification (understands landmarks & nature)
+        self.classifier = pipeline("zero-shot-image-classification", model="openai/clip-vit-base-patch32")
         
     async def analyze_image(self, image_bytes: bytes) -> dict:
-        """Analyzes an image using Hugging Face ViT-Large and Groq LLM for insights."""
+        """Analyzes an image using CLIP Zero-Shot and Groq LLM for insights."""
         try:
-            # LAZY LOAD: Only import these heavy libraries when this function is actually called
             from PIL import Image
-            from transformers import pipeline
-            
             img = Image.open(io.BytesIO(image_bytes))
             
-            if not hasattr(self, 'classifier'):
-                self.classifier = pipeline("image-classification", model="google/vit-large-patch16-224")
+            # 1. Define a massive list of candidate labels (Famous Landmarks + General Categories)
+            candidate_labels = [
+                # Famous Landmarks
+                "Taj Mahal", "Eiffel Tower", "Statue of Liberty", "Great Wall of China",
+                "Colosseum", "Big Ben", "Sydney Opera House", "Mount Fuji", 
+                "Christ the Redeemer", "Machu Picchu", "Pyramids of Giza", 
+                "Burj Khalifa", "Santorini", "Goa Beaches", "Ladakh", "Marina Beach",
+                "Gateway of India", "India Gate", "Charminar", "Mysore Palace",
+                # General Categories
+                "a railway station", "a train station", "an airport", 
+                "a beach", "a mountain", "a temple", "a church", "a mosque", 
+                "a monument", "a city skyline", "nature landscape", "a palace", 
+                "a fort", "a museum", "a modern building", "a park", "a bridge"
+            ]
             
-            results = self.classifier(img, top_k=3)
+            # 2. Run CLIP model to find the best match
+            results = self.classifier(img, candidate_labels=candidate_labels)
             top_label = results[0]['label']
             confidence = results[0]['score']
             
+            # 3. Prepare fallback
             fallback_insights = {
                 "landmark_name": top_label,
                 "category": "Detected Location",
@@ -34,6 +48,7 @@ class CVService:
                 "confidence": confidence
             }
             
+            # 4. Enhance with Groq Text LLM (Llama 3.3)
             try:
                 prompt = f"""The AI detected: '{top_label}'. Provide a JSON response with keys: landmark_name, category, location, visual_features, historical_significance, travel_tips. 
                 IMPORTANT: All values must be plain strings, DO NOT use arrays or lists. Return ONLY valid JSON."""
@@ -54,6 +69,7 @@ class CVService:
                     parsed['landmark_name'] = top_label
                     parsed['confidence'] = confidence
                     
+                    # Ensure all values are strings
                     for key in parsed:
                         if isinstance(parsed[key], list):
                             parsed[key] = ", ".join(str(item) for item in parsed[key])
@@ -63,18 +79,8 @@ class CVService:
                     return parsed
                     
             except Exception:
+                # If Groq text API fails, return the CLIP detection with fallback text
                 return fallback_insights
                 
-        except ImportError:
-            # Graceful fallback if torch/transformers are not installed on the server
-            return {
-                "landmark_name": "Feature Unavailable on Live Demo",
-                "category": "N/A",
-                "location": "N/A",
-                "visual_features": "The Computer Vision model requires more RAM than the free hosting tier provides.",
-                "historical_significance": "This feature works perfectly on local deployment. Please watch the demo video for a full breakdown.",
-                "travel_tips": "Run the project locally to test this feature!",
-                "confidence": 0.0
-            }
         except Exception as e:
             raise ValueError(f"Advanced Image analysis failed: {str(e)}")
