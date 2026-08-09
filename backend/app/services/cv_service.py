@@ -1,7 +1,5 @@
-import base64
 import json
 import re
-import io
 from openai import AsyncOpenAI
 from app.core.config import settings
 
@@ -12,7 +10,7 @@ class CVService:
     async def analyze_image(self, image_bytes: bytes) -> dict:
         """Analyzes an image using Hugging Face ViT-Large and Groq LLM for insights."""
         try:
-            # LAZY LOAD: Only import these heavy libraries when this function is actually called
+            # Attempt to import heavy libraries. If they fail (e.g., on Render free tier), return graceful error.
             from PIL import Image
             from transformers import pipeline
             
@@ -66,5 +64,16 @@ class CVService:
             except Exception:
                 return fallback_insights
                 
+        except ImportError:
+            # Graceful fallback if torch/transformers are not installed on the server
+            return {
+                "landmark_name": "Feature Unavailable on Live Demo",
+                "category": "N/A",
+                "location": "N/A",
+                "visual_features": "The Computer Vision model requires more RAM than the free hosting tier provides.",
+                "historical_significance": "This feature works perfectly on local deployment. Please watch the demo video for a full breakdown.",
+                "travel_tips": "Run the project locally to test this feature!",
+                "confidence": 0.0
+            }
         except Exception as e:
             raise ValueError(f"Advanced Image analysis failed: {str(e)}")
