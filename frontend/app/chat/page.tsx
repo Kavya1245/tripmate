@@ -1,12 +1,12 @@
 "use client";
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, Suspense } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import api from "@/lib/api";
 import Sidebar from "@/components/Sidebar";
 
-export default function ChatPlannerPage() {
+function ChatContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const qc = useQueryClient();
@@ -157,5 +157,13 @@ export default function ChatPlannerPage() {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function ChatPlannerPage() {
+  return (
+    <Suspense fallback={<div className="flex min-h-screen items-center justify-center">Loading chat...</div>}>
+      <ChatContent />
+    </Suspense>
   );
 }
