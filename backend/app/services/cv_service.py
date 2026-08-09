@@ -1,3 +1,4 @@
+import io
 import json
 import re
 from openai import AsyncOpenAI
@@ -10,7 +11,7 @@ class CVService:
     async def analyze_image(self, image_bytes: bytes) -> dict:
         """Analyzes an image using Hugging Face ViT-Large and Groq LLM for insights."""
         try:
-            # Attempt to import heavy libraries. If they fail (e.g., on Render free tier), return graceful error.
+            # LAZY LOAD: Only import these heavy libraries when this function is actually called
             from PIL import Image
             from transformers import pipeline
             
