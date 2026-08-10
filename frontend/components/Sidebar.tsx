@@ -25,6 +25,7 @@ export default function Sidebar() {
     { name: "Discover", href: "/destinations", icon: "🗺️" },
     { name: "Recognize", href: "/recognize", icon: "📸" },
     { name: "Recommend", href: "/recommend", icon: "🤖" },
+    { name: "Analytics", href: "/analytics", icon: "📊" },
     
   ];
 
